@@ -88,10 +88,14 @@ namespace foxy
       using boost::get;
       using result_type = expected<decltype(std::forward<F>(f)(std::declval<T>())), E>;
 
-      if (e.data_.which() == 0) {
-        return {std::forward<F>(f)(get<T>(e.data_))};
-      } else {
+      try {
+        if (e.data_.which() == 0) {
+          return {std::forward<F>(f)(get<T>(e.data_))};
+        }
         return {get<E>(e.data_)};
+
+      } catch (E const& err) {
+        return {err};
       }
     }
   };

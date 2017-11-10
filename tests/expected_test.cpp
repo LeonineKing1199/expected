@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <exception>
+#include <stdexcept>
 #include <fit/infix.hpp>
 
 #include "foxy/expected.hpp"
@@ -65,5 +66,13 @@ TEST_CASE("Our Expected type")
     expected = (f <$> expected);
 
     REQUIRE(expected.is_valid());
+
+    expected = [](auto&& x)
+    {
+      throw std::logic_error{"bad times, man; bad times"};
+      return x;
+    } <$> expected;
+
+    REQUIRE(!expected.is_valid());
   }
 }
