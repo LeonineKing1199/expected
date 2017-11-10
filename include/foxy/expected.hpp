@@ -18,6 +18,10 @@ namespace foxy
   >
   struct expected
   {
+  public:
+    using value_type     = T;
+    using exception_type = E;
+
   private:
     boost::variant<T, E> data_;
 
@@ -27,8 +31,7 @@ namespace foxy
     // only enable the default constructor if
     // T and E are default constructible
     template <
-      typename = std::enable_if_t<std::is_default_constructible_v<T>>,
-      typename = std::enable_if_t<std::is_default_constructible_v<E>>
+      typename = std::enable_if_t<std::is_default_constructible_v<T>>
     >
     expected(void)
     : data_{}
@@ -86,8 +89,39 @@ namespace foxy
     {
       return data_.which() == 0;
     }
+
+    // (>>=) :: Monad m => m a -> (a -> m b) -> m b
+    template <typename F>
+    auto operator>>=(F&& f) const
+    {
+      using boost::get;
+
+      using new_expected_type =
+        decltype(std::forward<F>(f)(std::declval<T>()));
+
+      using new_value_type = typename new_expected_type::value_type;
+
+      using return_type = expected<new_value_type, E>;
+
+      if (data_.which() == 1) { return return_type{get<E>(data_)}; }
+
+      auto&& val = get<T>(data_);
+      auto&& ret = std::forward<F>(f)(
+        std::forward<decltype(val)>(val));
+
+      return return_type{std::forward<decltype(ret)>(ret)};
+    }
+
+    // will actually throw if expected<T, E> is in
+    // an invalid state
+    auto get(void) const -> T
+    {
+      using boost::get;
+      return get<T>(data_);
+    }
   };
 
+  // fmap :: Functor f => (a -> b) -> f a -> f b
   struct fmap
   {
     template <typename F, typename T, typename E>
@@ -108,6 +142,7 @@ namespace foxy
     }
   };
 
+  // (<$>) :: Functor f => (a -> b) -> f a -> f b
   FIT_STATIC_FUNCTION($) = fit::infix(fmap());
 }
 
