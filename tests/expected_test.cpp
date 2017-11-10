@@ -2,7 +2,6 @@
 #include <iostream>
 #include <exception>
 #include <stdexcept>
-#include <fit/infix.hpp>
 
 #include "foxy/expected.hpp"
 
@@ -47,6 +46,8 @@ TEST_CASE("Our Expected type")
 
   SECTION("should support fmap to some degree")
   {
+    using foxy::$;
+
     auto expected = expected_t{1337};
 
     auto const fmap = foxy::fmap{};
@@ -61,17 +62,17 @@ TEST_CASE("Our Expected type")
       return x;
     };
 
-    auto const $ = fit::infix(fmap);
-
-    expected = (f <$> expected);
+    expected = f <$> expected;
 
     REQUIRE(expected.is_valid());
 
-    expected = [](auto&& x)
+    auto const thrower = [](auto&& x)
     {
       throw std::logic_error{"bad times, man; bad times"};
       return x;
-    } <$> expected;
+    };
+
+    expected = thrower <$> expected;
 
     REQUIRE(!expected.is_valid());
   }

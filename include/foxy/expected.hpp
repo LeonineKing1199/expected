@@ -2,11 +2,14 @@
 #define FOXY_EXPECTED_HPP_
 
 #include <type_traits>
+#include <fit/infix.hpp>
+#include <fit/function.hpp>
 #include <boost/variant/get.hpp>
 #include <boost/variant/variant.hpp>
 
 namespace foxy
 {
+  // forward declare so we can declare as a friend
   struct fmap;
 
   template <
@@ -21,6 +24,8 @@ namespace foxy
     friend fmap;
 
   public:
+    // only enable the default constructor if
+    // T and E are default constructible
     template <
       typename = std::enable_if_t<std::is_default_constructible_v<T>>,
       typename = std::enable_if_t<std::is_default_constructible_v<E>>
@@ -29,6 +34,8 @@ namespace foxy
     : data_{}
     {}
 
+    // only enable the copy constructor if
+    // T and E are copy constructible
     template <
       typename = std::enable_if_t<std::is_copy_constructible_v<T>>,
       typename = std::enable_if_t<std::is_copy_constructible_v<E>>
@@ -37,6 +44,8 @@ namespace foxy
     : data_{rhs.data_}
     {}
 
+    // only enable the move constructor if
+    // T and E are move constructible
     template <
       typename = std::enable_if_t<std::is_move_constructible_v<T>>,
       typename = std::enable_if_t<std::is_move_constructible_v<E>>
@@ -86,7 +95,6 @@ namespace foxy
       -> expected<decltype(std::forward<F>(f)(std::declval<T>())), E>
     {
       using boost::get;
-      using result_type = expected<decltype(std::forward<F>(f)(std::declval<T>())), E>;
 
       try {
         if (e.data_.which() == 0) {
@@ -99,6 +107,8 @@ namespace foxy
       }
     }
   };
+
+  FIT_STATIC_FUNCTION($) = fit::infix(fmap());
 }
 
 #endif // FOXY_EXPECTED_HPP_
